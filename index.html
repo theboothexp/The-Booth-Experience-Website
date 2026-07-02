@@ -362,7 +362,7 @@
 					<p style="margin-top:1rem;color:var(--ink-soft)">Send a few details and we’ll get back to you with availability and a quote. Serving Edmonton and surrounding areas.</p>
 				</div>
 				<!-- Netlify form: works automatically once deployed on Netlify -->
-				<form name="booking" method="POST" action="/thanks.html" data-netlify="true" netlify-honeypot="bot-field" class="reveal">
+				<form id="booking-form" name="booking" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="reveal">
 					<input type="hidden" name="form-name" value="booking" />
 					<p style="display:none"><label>Don’t fill this out: <input name="bot-field" /></label></p>
 					<div class="field">
@@ -431,6 +431,33 @@
 			document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
 		} else {
 			document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); });
+		}
+		// Booking form: submit in the background to "/" (where Netlify
+		// processes it), then send the visitor to the thank-you page.
+		var bookingForm = document.getElementById('booking-form');
+		if (bookingForm) {
+			bookingForm.addEventListener('submit', function(e){
+				e.preventDefault();
+				var submitBtn = bookingForm.querySelector('button[type="submit"]');
+				if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending…'; }
+				fetch('/', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body: new URLSearchParams(new FormData(bookingForm)).toString()
+				})
+				.then(function(res){
+					if (res.ok) {
+						window.location = '/thanks.html';
+					} else {
+						if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send booking request'; }
+						alert('Sorry — something went wrong sending your request. Please try again, or email us directly.');
+					}
+				})
+				.catch(function(){
+					if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send booking request'; }
+					alert('Sorry — a network error stopped your request from sending. Please try again, or email us directly.');
+				});
+			});
 		}
 	</script>
 
